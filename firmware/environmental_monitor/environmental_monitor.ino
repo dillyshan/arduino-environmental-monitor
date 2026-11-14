@@ -1,67 +1,99 @@
 /*
  * Project: Smart Environmental Monitoring System
  * Board: Arduino Uno R3
- * Sensor: DHT11 Temperature and Humidity Sensor
  *
- * Description:
- * Reads temperature and humidity from a DHT11 sensor
- * and displays the measurements in Serial Monitor.
+ * Features:
+ * - Monitor temperature and humidity using DHT11
+ * - Activate warning LED at 26 C or higher
+ * - Display readings and system status in Serial Monitor
  *
  * Connections:
  * DHT11 Signal -> Arduino D2
  * DHT11 VCC    -> Arduino 5V
  * DHT11 GND    -> Arduino GND
+ *
+ * Warning LED anode -> 220 ohm resistor -> D8
+ * Warning LED cathode -> GND
  */
 
 #include <DHT.h>
 
-// Define the digital pin connected to the DHT11
+// DHT11 sensor configuration
 #define DHTPIN 2
-
-// Specify which DHT sensor we're using
 #define DHTTYPE DHT11
 
-// Create the DHT sensor object
+// Warning LED pin
+const int warningLED = 8;
+
+// Temperature warning threshold (Celsius)
+const float temperatureLimit = 26.0;
+
+// Initialize DHT11 sensor
 DHT dht(DHTPIN, DHTTYPE);
 
+// Sensor measurement interval
+unsigned long previousRead = 0;
+const unsigned long readInterval = 2000;
+
 void setup() {
-  // Initialize serial communication at 9600 baud
+  // Initialize serial communication
   Serial.begin(9600);
 
-  // Initialize the temperature and humidity sensor
+  // Start the DHT11 sensor
   dht.begin();
 
-  // Display startup messages
+  // Configure warning LED
+  pinMode(warningLED, OUTPUT);
+
+  // Perform LED startup test
+  digitalWrite(warningLED, HIGH);
+  delay(1000);
+  digitalWrite(warningLED, LOW);
+
+  // Display initialization messages
   Serial.println("Environmental Monitoring System");
-  Serial.println("DHT11 Sensor Initialized");
+  Serial.println("Temperature Warning System Ready");
 }
 
 void loop() {
-  // Read relative humidity as a percentage
-  float humidity = dht.readHumidity();
+  // Get current Arduino runtime in milliseconds
+  unsigned long currentTime = millis();
 
-  // Read temperature in degrees Celsius
-  float temperature = dht.readTemperature();
+  // Read the sensor every 2 seconds
+  if (currentTime - previousRead >= readInterval) {
 
-  // Check whether either measurement failed
-  if (isnan(humidity) || isnan(temperature)) {
-    Serial.println("Error: Failed to read DHT11!");
+    // Update last reading time
+    previousRead = currentTime;
 
-    // Wait before trying again
-    delay(2000);
-    return;
+    // Read temperature and humidity
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+
+    // Check for sensor errors
+    if (isnan(temperature) || isnan(humidity)) {
+      Serial.println("Error: DHT11 reading failed!");
+      return;
+    }
+
+    // Display measurements
+    Serial.print("Temperature: ");
+    Serial.print(temperature);
+    Serial.print(" C | Humidity: ");
+    Serial.print(humidity);
+    Serial.print(" %");
+
+    // Check temperature threshold
+    if (temperature >= temperatureLimit) {
+
+      // Activate warning LED
+      digitalWrite(warningLED, HIGH);
+      Serial.println(" | Status: WARNING");
+
+    } else {
+
+      // Turn warning LED off
+      digitalWrite(warningLED, LOW);
+      Serial.println(" | Status: NORMAL");
+    }
   }
-
-  // Display the temperature reading
-  Serial.print("Temperature: ");
-  Serial.print(temperature);
-  Serial.print(" C");
-
-  // Display the humidity reading
-  Serial.print(" | Humidity: ");
-  Serial.print(humidity);
-  Serial.println(" %");
-
-  // Take another measurement after 2 seconds
-  delay(2000);
 }
