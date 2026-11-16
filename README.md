@@ -1,16 +1,19 @@
+
 # Smart Environmental Monitoring System
 
-An Arduino-based environmental monitoring system that measures temperature and humidity, automatically detects high-temperature conditions, and records sensor data for analysis.
+An Arduino-based environmental monitoring system that measures temperature and humidity, detects high-temperature conditions, provides visual alerts, and automatically records sensor data for analysis using Python.
 
-This project was developed to gain practical experience in embedded systems, sensor interfacing, hardware integration, and data acquisition.
+This project was developed to gain hands-on experience in embedded systems, sensor interfacing, circuit prototyping, hardware-software integration, and environmental data acquisition.
 
 ## Project Overview
 
-The system uses an Arduino Uno R3 and a DHT11 sensor to monitor environmental conditions in real time.
+The system uses an Arduino Uno R3 and a DHT11 sensor to monitor environmental temperature and relative humidity.
 
-When the measured temperature reaches or exceeds 26°C, the Arduino activates a red warning LED.
+When the measured temperature reaches or exceeds 26°C, the Arduino automatically activates a red warning LED.
 
-Temperature, humidity, elapsed time, and system status are transmitted over serial communication in CSV format for analysis and visualization.
+Sensor measurements are transmitted over USB serial communication in CSV format. A Python application receives the measurements and automatically saves them into timestamped CSV files for further analysis.
+
+The project combines embedded C++ firmware, Python programming, electronic hardware, serial communication, and data visualization.
 
 ## Features
 
@@ -19,9 +22,12 @@ Temperature, humidity, elapsed time, and system status are transmitted over seri
 - Automatic high-temperature warning at 26°C
 - Red LED visual alert
 - Sensor error detection
-- Non-blocking measurement scheduling using millis()
+- Non-blocking sensor measurement scheduling using `millis()`
 - CSV-formatted serial output every 2 seconds
+- Automatic CSV recording using Python and PySerial
+- Timestamped CSV filenames for recording sessions
 - Temperature and humidity data visualization
+- GitHub version control and technical documentation
 
 ## Hardware Components
 
@@ -29,7 +35,7 @@ Temperature, humidity, elapsed time, and system status are transmitted over seri
 |---|---|
 | Arduino Uno R3 | Main microcontroller |
 | DHT11 Sensor Module | Temperature and humidity measurements |
-| Red LED | Visual temperature warning |
+| Red LED | High-temperature visual warning |
 | 220 Ohm Resistor | Limits LED current |
 | Breadboard | Circuit prototyping |
 | Jumper Wires | Electrical connections |
@@ -47,10 +53,21 @@ Temperature, humidity, elapsed time, and system status are transmitted over seri
 
 ## Software and Libraries
 
+### Arduino
+
 - Arduino IDE
 - Arduino C/C++
 - Adafruit DHT Sensor Library
 - Adafruit Unified Sensor Library
+
+### Python
+
+- Python 3
+- PySerial 3.5
+- Built-in Python `csv`, `datetime`, and `pathlib` modules
+
+### Other Tools
+
 - Google Sheets for data visualization
 - GitHub for version control and documentation
 
@@ -62,7 +79,8 @@ Temperature, humidity, elapsed time, and system status are transmitted over seri
 4. If the threshold is reached, the warning LED turns ON.
 5. Otherwise, the LED remains OFF.
 6. Measurements and system status are transmitted in CSV format.
-7. The recorded data can be analyzed using spreadsheet software.
+7. The Python logger can receive and automatically save the measurements.
+8. The collected data can be analyzed using spreadsheet software.
 
 ### Warning Conditions
 
@@ -76,7 +94,14 @@ Temperature, humidity, elapsed time, and system status are transmitted over seri
 
 The Arduino sends measurements through USB serial communication at 9600 baud.
 
-The output format is:
+The CSV output contains four fields:
+
+- `time_ms`: Milliseconds since Arduino startup
+- `temperature_c`: Temperature in degrees Celsius
+- `humidity_pct`: Relative humidity percentage
+- `status`: NORMAL, WARNING, or SENSOR_ERROR
+
+### Example Serial Output
 
 ```text
 time_ms,temperature_c,humidity_pct,status
@@ -85,15 +110,80 @@ time_ms,temperature_c,humidity_pct,status
 6000,22.60,52.00,NORMAL
 ```
 
-Time is measured in milliseconds since Arduino startup.
+### Manual Data Collection
 
-Serial output was collected and saved manually as a CSV file for analysis.
+During initial development, measurements were copied from Arduino Serial Monitor and saved as a CSV file.
+
+The initial dataset contains 35 measurements collected over approximately 70 seconds.
 
 [View Sample Sensor Dataset](data/sample_readings.csv)
 
+### Automatic Data Logging with Python
+
+A Python-based serial logger was developed to automatically collect environmental measurements from the Arduino.
+
+The program uses PySerial to read the Arduino's serial output and automatically write measurements into a CSV file.
+
+Each recording session generates a unique timestamped filename, preventing previous recordings from being overwritten.
+
+#### Requirements
+
+- Python 3
+- PySerial library
+- Arduino Uno connected through USB
+- Environmental monitoring firmware uploaded to Arduino
+
+#### Install PySerial
+
+On Windows, using Python 3.15:
+
+```bash
+py -3.15 -m pip install pyserial
+```
+
+Alternatively, with a correctly configured Python installation:
+
+```bash
+python -m pip install pyserial
+```
+
+#### Running the Python Logger
+
+1. Connect the Arduino to the computer using USB.
+2. Ensure the environmental monitoring firmware is uploaded.
+3. Close Arduino IDE Serial Monitor and Serial Plotter.
+4. Open `logger/serial_logger.py`.
+5. Set the `PORT` variable to the Arduino's current COM port.
+6. Open Command Prompt in the repository's root directory.
+7. Run the Python logger:
+
+```bash
+py -3.15 logger/serial_logger.py
+```
+
+8. Observe incoming temperature and humidity measurements.
+9. Press Ctrl+C to stop recording.
+
+Example terminal output:
+
+```text
+Connected to Arduino!
+Recording sensor measurements...
+Press Ctrl+C to stop.
+Saved: 2000,22.20,62.00,NORMAL
+Saved: 4000,22.20,62.00,NORMAL
+Saved: 6000,22.20,62.00,NORMAL
+```
+
+The logger creates CSV files in the same directory as `serial_logger.py`.
+
+This allows measurements to be recorded automatically without manually copying data from Serial Monitor.
+
+**Python Source Code:** [View Automatic Serial Logger](logger/serial_logger.py)
+
 ## Experimental Results
 
-A 70-second recording was collected with 35 sensor measurements at approximately 2-second intervals.
+An initial 70-second recording was collected with 35 sensor measurements at approximately 2-second intervals.
 
 ### Temperature vs. Time
 
@@ -109,10 +199,11 @@ Relative humidity varied between 52% and 53% during the recorded test.
 
 ### Observations
 
-- Temperature remained stable throughout the sample recording.
+- Temperature remained stable throughout the initial recording.
 - Humidity showed small variations of approximately 1 percentage point.
-- The system remained in NORMAL status during the recorded dataset.
-- The warning LED was separately tested by increasing the temperature measured by the DHT11 until the 26°C threshold was reached.
+- The system remained in NORMAL status during the initial dataset.
+- The warning LED was separately tested by raising the temperature measured by the DHT11 until the 26°C threshold was reached.
+- The Python logger was successfully tested using real sensor measurements and automatically generated a CSV file.
 
 ## Testing and Verification
 
@@ -125,7 +216,11 @@ The following tests were successfully completed:
 - Temperature threshold activation test
 - Normal operating condition test
 - CSV serial output verification
-- Data visualization using recorded measurements
+- Manual CSV data collection
+- Temperature and humidity visualization
+- Python serial connection test
+- Automatic CSV file generation
+- Python data logging with real sensor readings
 
 ## Repository Structure
 
@@ -135,6 +230,8 @@ arduino-environmental-monitor/
 ├── firmware/
 │   └── environmental_monitor/
 │       └── environmental_monitor.ino
+├── logger/
+│   └── serial_logger.py
 ├── data/
 │   └── sample_readings.csv
 └── images/
@@ -145,6 +242,8 @@ arduino-environmental-monitor/
 
 ## How to Run
 
+### Arduino Firmware
+
 1. Assemble the circuit according to the hardware connections table.
 2. Install the Adafruit DHT Sensor Library and its dependencies.
 3. Open `firmware/environmental_monitor/environmental_monitor.ino` in Arduino IDE.
@@ -153,23 +252,39 @@ arduino-environmental-monitor/
 6. Open Serial Monitor at 9600 baud.
 7. Observe live temperature, humidity, and system status readings.
 
+### Automatic Recording
+
+1. Install Python and PySerial.
+2. Close Arduino Serial Monitor.
+3. Configure the serial port in `logger/serial_logger.py`.
+4. Run the Python logger.
+5. Allow the logger to record measurements.
+6. Press Ctrl+C to stop recording.
+7. Open the generated CSV file to review the data.
+
 ## Engineering Skills Demonstrated
 
 - Embedded C/C++ programming
+- Python programming
 - Digital sensor interfacing
-- Hardware prototyping and circuit assembly
+- Electronic circuit prototyping
+- Hardware-software integration
 - Conditional logic and threshold-based control
-- Non-blocking timing with millis()
+- Non-blocking scheduling with `millis()`
 - UART serial communication
 - Sensor data acquisition and CSV formatting
+- Automated file generation
 - Data visualization and experimental testing
+- Troubleshooting and hardware verification
 - Git version control and technical documentation
 
-## Future Improvements
+## Planned Improvements
 
-- Integrate an I2C LCD for standalone monitoring
+- Integrate an I2C LCD display for standalone monitoring once the adapter is available
 - Add an audible alarm using a suitable buzzer driver
 - Introduce adjustable temperature thresholds
 - Improve sensor fault handling and recovery
-- Add automatic computer-side data logging
-- Create a permanent circuit diagram and enclosure
+- Add configurable serial port selection in the Python logger
+- Create a permanent circuit diagram
+- Add photographs of the completed hardware
+- Design a protective enclosure for the system
