@@ -51,6 +51,31 @@ The project combines embedded C++ firmware, Python programming, electronic hardw
 | Red LED Anode (+) | Digital Pin 8 through 220 Ohm resistor |
 | Red LED Cathode (-) | GND |
 
+## Circuit Schematic
+
+The system's electrical connections were designed and documented
+using KiCad.
+
+The schematic includes:
+- Arduino Uno R3 microcontroller
+- DHT11 temperature and humidity sensor
+- Red warning LED with 220 Ohm current-limiting resistor
+- Planned I2C LCD1602 display connections
+
+The schematic passed KiCad Electrical Rules Checker (ERC)
+with zero reported errors and warnings.
+
+### Schematic Files
+
+- [View Circuit Schematic (PDF)](hardware/Environmental_Monitor_Schematic.pdf)
+- [Download Editable KiCad Schematic](hardware/Environmental_Monitor_Schematic.kicad_sch)
+- [Download KiCad Project File](hardware/Environmental_Monitor_Schematic.kicad_pro)
+
+**Note:** The I2C LCD connections are included in the schematic
+but have not yet been physically assembled and tested. The
+adapter pin order will be verified during hardware integration.
+
+
 ## Software and Libraries
 
 ### Arduino
@@ -234,10 +259,15 @@ arduino-environmental-monitor/
 │   └── serial_logger.py
 ├── data/
 │   └── sample_readings.csv
-└── images/
+├── images/
+│   ├── README.md
+│   ├── temperature_vs_time.png
+│   └── humidity_vs_time.png
+└── hardware/
     ├── README.md
-    ├── temperature_vs_time.png
-    └── humidity_vs_time.png
+    ├── Environmental_Monitor_Schematic.pdf
+    ├── Environmental_Monitor_Schematic.kicad_pro
+    └── Environmental_Monitor_Schematic.kicad_sch
 ```
 
 ## How to Run
